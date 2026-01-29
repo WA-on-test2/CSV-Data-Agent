@@ -1,13 +1,25 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict
 from agent.chat_agent import ChatAgent
 from config import CSV_PATH
 import os
+import time
 
 app = FastAPI(title="CSV Data Agent")
+
+# Add CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 agent = ChatAgent(CSV_PATH)
 chat_sessions = {}
 
@@ -19,225 +31,131 @@ class ChatResponse(BaseModel):
     response: str
     history: List[Dict[str, str]]
 
-if os.path.exists("static"):
-    app.mount("/static", StaticFiles(directory="static"), name="static")
+class ClearRequest(BaseModel):
+    session_id: str = "default"
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    html_file = "static/index.html"
-    if os.path.exists(html_file):
-        return FileResponse(html_file)
-    
-    return HTMLResponse(content="""
+    # Add timestamp to bust cache
+    ts = str(int(time.time()))
+    return HTMLResponse(content=f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV Data Agent</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>CSV Data Agent - v{ts}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            width: 100%;
-            max-width: 800px;
-            height: 600px;
-            display: flex;
-            flex-direction: column;
-        }
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 20px 20px 0 0;
-            text-align: center;
-        }
-        .header h1 { font-size: 24px; margin-bottom: 5px; }
-        .header p { opacity: 0.9; font-size: 14px; }
-        .chat-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            background: #f8f9fa;
-        }
-        .message {
-            margin-bottom: 15px;
-            display: flex;
-            align-items: flex-start;
-            animation: fadeIn 0.3s;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .message.user { justify-content: flex-end; }
-        .message-content {
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            word-wrap: break-word;
-        }
-        .message.user .message-content {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-        .message.assistant .message-content {
-            background: white;
-            color: #333;
-            border: 1px solid #e0e0e0;
-            border-bottom-left-radius: 4px;
-        }
-        .input-container {
-            padding: 20px;
-            background: white;
-            border-top: 1px solid #e0e0e0;
-            border-radius: 0 0 20px 20px;
-            display: flex;
-            gap: 10px;
-        }
-        #messageInput {
-            flex: 1;
-            padding: 12px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-        #messageInput:focus { border-color: #667eea; }
-        button {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        button:active { transform: translateY(0); }
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .clear-btn {
-            background: #dc3545;
-            padding: 8px 16px;
-            font-size: 12px;
-        }
-        .loading {
-            display: none;
-            text-align: center;
-            color: #667eea;
-            padding: 10px;
-            font-style: italic;
-        }
-        .loading.active { display: block; }
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }}
+        .container {{ background: white; border-radius: 24px; box-shadow: 0 24px 48px rgba(0,0,0,0.2); width: 100%; max-width: 900px; height: 700px; display: flex; flex-direction: column; }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px 28px; border-radius: 24px 24px 0 0; display: flex; align-items: center; gap: 16px; }}
+        .logo {{ width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }}
+        .header-text h1 {{ font-size: 24px; font-weight: 700; margin-bottom: 4px; }}
+        .header-text p {{ font-size: 14px; opacity: 0.9; }}
+        .chat-container {{ flex: 1; overflow-y: auto; padding: 24px; background: #f8fafc; }}
+        .message {{ margin-bottom: 16px; display: flex; gap: 12px; }}
+        .message.user {{ justify-content: flex-end; }}
+        .avatar {{ width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }}
+        .message.user .avatar {{ background: linear-gradient(135deg, #667eea, #764ba2); order: 2; }}
+        .message.assistant .avatar {{ background: linear-gradient(135deg, #10b981, #059669); }}
+        .message-content {{ max-width: 65%; padding: 14px 18px; border-radius: 16px; line-height: 1.6; white-space: pre-wrap; }}
+        .message.user .message-content {{ background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-bottom-right-radius: 4px; }}
+        .message.assistant .message-content {{ background: white; color: #334155; border: 1px solid #e2e8f0; border-bottom-left-radius: 4px; }}
+        .input-area {{ padding: 20px 24px; background: white; border-top: 1px solid #e2e8f0; border-radius: 0 0 24px 24px; }}
+        .loading {{ display: none; align-items: center; gap: 8px; padding: 10px 16px; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 12px; color: #1e40af; font-size: 14px; margin-bottom: 12px; }}
+        .loading.active {{ display: flex; }}
+        .spinner {{ width: 16px; height: 16px; border: 2px solid #dbeafe; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; }}
+        @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
+        .input-wrapper {{ display: flex; gap: 12px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px; padding: 8px; }}
+        .input-wrapper:focus-within {{ background: white; border-color: #667eea; box-shadow: 0 0 0 4px rgba(102,126,234,0.1); }}
+        input {{ flex: 1; padding: 10px 12px; border: none; background: transparent; font-size: 15px; outline: none; }}
+        button {{ padding: 12px 24px; border: none; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; }}
+        button:disabled {{ opacity: 0.5; cursor: not-allowed; }}
+        .btn-send {{ background: linear-gradient(135deg, #667eea, #764ba2); color: white; }}
+        .btn-clear {{ background: #ef4444; color: white; }}
+        .welcome {{ background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #bfdbfe; border-radius: 16px; padding: 20px; }}
+        .welcome h3 {{ color: #1e40af; font-size: 16px; margin-bottom: 12px; }}
+        .welcome ul {{ list-style: none; padding: 0; }}
+        .welcome li {{ padding: 6px 0; color: #1e3a8a; font-size: 14px; }}
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 CSV Data Agent</h1>
-            <p>Ask questions about your dataset</p>
+            <div class="logo">📊</div>
+            <div class="header-text">
+                <h1>CSV Data Agent</h1>
+                <p>AI-Powered Data Analytics</p>
+            </div>
         </div>
-        <div class="chat-container" id="chatContainer"></div>
-        <div class="loading" id="loading">Thinking...</div>
-        <div class="input-container">
-            <button class="clear-btn" onclick="clearChat()">Clear</button>
-            <input type="text" id="messageInput" placeholder="Ask about the dataset..." onkeypress="handleKeyPress(event)">
-            <button onclick="sendMessage()" id="sendBtn">Send</button>
+        <div class="chat-container" id="chat"></div>
+        <div class="input-area">
+            <div class="loading" id="load"><div class="spinner"></div><span>Processing...</span></div>
+            <div class="input-wrapper">
+                <button class="btn-clear" id="clr">🗑️ Clear</button>
+                <input type="text" id="inp" placeholder="Ask me anything...">
+                <button class="btn-send" id="snd">Send →</button>
+            </div>
         </div>
     </div>
-
     <script>
-        const chatContainer = document.getElementById('chatContainer');
-        const messageInput = document.getElementById('messageInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const loading = document.getElementById('loading');
-
-        function addMessage(content, role) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${role}`;
-            
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content';
-            contentDiv.innerHTML = role === 'assistant' ? marked.parse(content) : content;
-            
-            messageDiv.appendChild(contentDiv);
-            chatContainer.appendChild(messageDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        async function sendMessage() {
-            const message = messageInput.value.trim();
-            if (!message) return;
-
-            addMessage(message, 'user');
-            messageInput.value = '';
-            sendBtn.disabled = true;
-            loading.classList.add('active');
-
-            try {
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message, session_id: 'default' })
-                });
-
-                const data = await response.json();
-                addMessage(data.response, 'assistant');
-            } catch (error) {
-                addMessage('Error: Could not get response', 'assistant');
-            } finally {
-                sendBtn.disabled = false;
-                loading.classList.remove('active');
-                messageInput.focus();
-            }
-        }
-
-        async function clearChat() {
-            if (confirm('Clear conversation history?')) {
-                chatContainer.innerHTML = '';
-                await fetch('/clear', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: 'default' })
-                });
-            }
-        }
-
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') sendMessage();
-        }
-
-        // Simple markdown parser
-        const marked = {
-            parse: (text) => {
-                return text
-                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                    .replace(/^- (.+)$/gm, '<li>$1</li>')
-                    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-                    .replace(/\n/g, '<br>');
-            }
-        };
-
-        messageInput.focus();
+        console.log('v{ts}');
+        var chat=document.getElementById('chat');
+        var inp=document.getElementById('inp');
+        var snd=document.getElementById('snd');
+        var clr=document.getElementById('clr');
+        var load=document.getElementById('load');
+        
+        chat.innerHTML='<div class="welcome"><h3>👋 Welcome!</h3><ul><li>→ What columns?</li><li>→ Show overview</li><li>→ Calculate stats</li></ul></div>';
+        
+        function add(txt,role){{
+            var m=document.createElement('div');
+            m.className='message '+role;
+            var a=document.createElement('div');
+            a.className='avatar';
+            a.textContent=role==='user'?'👤':'🤖';
+            var c=document.createElement('div');
+            c.className='message-content';
+            c.textContent=txt;
+            m.appendChild(a);
+            m.appendChild(c);
+            chat.appendChild(m);
+            chat.scrollTop=chat.scrollHeight;
+        }}
+        
+        function send(){{
+            var msg=inp.value.trim();
+            if(!msg)return;
+            console.log('Sending:',msg);
+            add(msg,'user');
+            inp.value='';
+            snd.disabled=true;
+            load.classList.add('active');
+            fetch('/chat',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{message:msg,session_id:'default'}})}})
+            .then(function(r){{return r.json();}})
+            .then(function(d){{add(d.response,'assistant');}})
+            .catch(function(e){{add('Error: '+e.message,'assistant');}})
+            .finally(function(){{snd.disabled=false;load.classList.remove('active');inp.focus();}});
+        }}
+        
+        function clear(){{
+            if(!confirm('Clear?'))return;
+            fetch('/clear',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{session_id:'default'}})}})
+            .then(function(){{chat.innerHTML='<div class="welcome"><h3>✨ Cleared!</h3></div>';}});
+        }}
+        
+        snd.onclick=send;
+        clr.onclick=clear;
+        inp.onkeypress=function(e){{if(e.key==='Enter')send();}};
+        
+        fetch('/health').then(function(r){{return r.json();}}).then(function(d){{console.log('OK:',d);}});
+        inp.focus();
+        console.log('Ready!');
     </script>
 </body>
 </html>
@@ -245,29 +163,33 @@ async def root():
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(message: ChatMessage):
-    if not message.message:
-        raise HTTPException(status_code=400, detail="Empty message")
-    
-    # Get or create session history
-    if message.session_id not in chat_sessions:
-        chat_sessions[message.session_id] = []
-    
-    history = chat_sessions[message.session_id]
-    
-    # Process message
-    response = agent.process_message_sync(message.message, history)
-    
-    # Update history
-    history.append({"role": "user", "content": message.message})
-    history.append({"role": "assistant", "content": response})
-    
-    return ChatResponse(response=response, history=history)
+    try:
+        print(f"\n📨 {message.message[:50]}")
+        if not message.message.strip():
+            raise HTTPException(status_code=400, detail="Empty")
+        if message.session_id not in chat_sessions:
+            chat_sessions[message.session_id] = []
+        history = chat_sessions[message.session_id]
+        response = agent.process_message_sync(message.message, history)
+        history.append({"role": "user", "content": message.message})
+        history.append({"role": "assistant", "content": response})
+        print(f"✅ Sent\n")
+        return ChatResponse(response=response, history=history)
+    except Exception as e:
+        print(f"❌ {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/clear")
-async def clear_chat(session_id: str = "default"):
-    if session_id in chat_sessions:
-        chat_sessions[session_id] = []
-    return {"status": "cleared"}
+async def clear_chat(request: ClearRequest):
+    try:
+        print(f"\n🗑️ {request.session_id}")
+        if request.session_id in chat_sessions:
+            chat_sessions[request.session_id] = []
+        print("✅ Cleared\n")
+        return {"status": "cleared"}
+    except Exception as e:
+        print(f"❌ {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")
 async def health():
