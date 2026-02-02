@@ -1,4 +1,4 @@
-# 📊 CSV Data Agent
+#  CSV Data Agent
 
 An intelligent, AI-powered web application that enables natural language interaction with CSV datasets. Ask questions about your data in plain English and get instant insights powered by LLM technology.
 
@@ -6,16 +6,16 @@ An intelligent, AI-powered web application that enables natural language interac
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-## ✨ Features
+##  Features
 
-- 🤖 **Natural Language Queries** - Ask questions about your data in plain English
-- 📈 **Smart Analytics** - Automatic computation of averages, groupings, and filters
-- 💬 **Chat Interface** - Beautiful, modern web UI with conversation history
-- 🔧 **Tool Integration** - LLM intelligently selects and uses data analysis tools
-- 🚀 **Fast & Responsive** - Built with FastAPI for high performance
-- 🎨 **Terminal & Web interface** - Modern, gradient-based UI with smooth animations
+-  **Natural Language Queries** - Ask questions about your data in plain English
+-  **Smart Analytics** - Automatic computation of averages, groupings, and filters
+-  **Chat Interface** - Beautiful, modern web UI with conversation history
+-  **Tool Integration** - LLM intelligently selects and uses data analysis tools
+-  **Fast & Responsive** - Built with FastAPI for high performance
+-  **Terminal & Web interface** - Modern, gradient-based UI with smooth animations
 
-## 🎯 Capabilities
+##  Capabilities
 
 The agent can:
 - List all columns in your dataset
@@ -25,7 +25,7 @@ The agent can:
 - Filter rows based on conditions (>, <, ==)
 - Explain results in clear, formatted Markdown
 
-## 🏗️ Project Structure
+##  Project Structure
 
 ```
 csv-data-agent/
@@ -46,7 +46,7 @@ csv-data-agent/
 └── README.md                   
 ```
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 
@@ -93,7 +93,7 @@ python app_cli.py
 ```
 
 
-## 💻 Usage Examples
+##  Usage Examples
 
 ### Web Interface
 
@@ -129,7 +129,7 @@ You: What's the average price?
 Assistant: The average price across all products is $45.67.
 ```
 
-## 🛠️ Available Tools
+##  Available Tools
 
 The agent has access to the following data analysis tools:
 
@@ -156,7 +156,7 @@ Filters rows based on numeric conditions.
   - `operator` (string) - One of: >, <, ==
   - `value` (number) - Value to compare against
 
-## 🔧 Configuration
+##  Configuration
 
 ### Environment Variables
 
@@ -172,7 +172,7 @@ export MODEL="gpt-4"
 
 Modify the `SYSTEM_PROMPT` in `config.py` to customize the agent's behavior and personality.
 
-## 📦 Dependencies
+##  Dependencies
 
 - **fastapi** - Modern web framework for building APIs
 - **uvicorn** - ASGI server for running FastAPI
@@ -185,7 +185,7 @@ Install all dependencies:
 pip install fastapi uvicorn pandas openai pydantic python-multipart
 ```
 
-## 🎨 UI Features
+##  UI Features
 
 - **Responsive Design** - Works on desktop and mobile devices
 - **Smooth Animations** - Fade-in messages and loading indicators
@@ -194,14 +194,14 @@ pip install fastapi uvicorn pandas openai pydantic python-multipart
 - **Session Management** - Maintains conversation history per session
 - **Clear History** - Reset conversation with a single click
 
-## 🔒 Security Notes
+##  Security Notes
 
 - Never commit your API keys to version control
 - Use environment variables or a `.env` file for sensitive data
 - Add `config.py` to `.gitignore` if it contains secrets
 - Consider implementing rate limiting for production deployments
 
-## 🚦 API Endpoints
+##  API Endpoints
 
 ### `GET /`
 Serves the main web interface.
@@ -238,7 +238,7 @@ Clears the conversation history for a session.
 ### `GET /health`
 Health check endpoint returning server status.
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Port Already in Use
 ```bash
@@ -262,7 +262,7 @@ pip install -r requirements.txt
 - Ensure the CSV file is properly formatted
 - Check file permissions
 
-## 📈 Future Enhancements
+##  Future Enhancements
 
 - [ ] Support for multiple CSV files
 - [ ] Advanced visualizations (charts, graphs)
@@ -272,7 +272,7 @@ pip install -r requirements.txt
 - [ ] User authentication
 - [ ] Sharing and collaboration features
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -282,15 +282,15 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 License
+##  License
 
 This project is licensed under the Apache License - see the LICENSE file for details.
 
-## 👨‍💻 Author
+##  Author
 
 Created with ❤️ by Marina Safwat
 
-## 📞 Support
+##  Support
 
 For issues, questions, or suggestions:
 - Open an issue on GitHub
